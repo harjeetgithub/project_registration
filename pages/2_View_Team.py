@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-import sqlite3
 import json
-from database import get_connection  # path to your database
+from database import create_table,get_connection  # path to your database
 
 st.title("View Teams")
 
@@ -29,19 +28,11 @@ def get_teams(group_name=None):
     If group_name is provided, filter by that group.
     Returns list of dicts with keys: id, group_name, leader_roll, member_rolls, created_at
     """
+    create_table()
     conn = get_connection()
     c = conn.cursor()
     
-    # Make sure teams table exists
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS teams (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            group_name TEXT NOT NULL,
-            leader_roll TEXT NOT NULL,
-            member_rolls TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
+    
     
     if group_name and group_name != "All":
         c.execute("SELECT id, group_name, leader_roll, member_rolls, project_title, created_at FROM teams WHERE group_name = ?", (group_name,))

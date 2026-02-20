@@ -2,10 +2,7 @@ import streamlit as st
 from database import get_all_students, get_students_by_group
 
 st.title("📋 View Students Data")
-# from database import show_tables
-# from database import count_students
-# st.write("Total Records in DB:", count_students())
-# st.write("Available Tables:", show_tables())
+
 # -----------------------------
 # Load Data
 # -----------------------------

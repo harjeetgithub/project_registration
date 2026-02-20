@@ -24,7 +24,17 @@ required_columns = [
 if uploaded_file is not None:
     df = pd.read_excel(uploaded_file)
     st.subheader("Preview Data")
-    st.dataframe(df.head())
+    # Keep only rows where 'roll_no' and 'student_name' are not empty
+    df = df.dropna(subset=["RollNo","StudentName"])
+
+    # Optional: remove rows where all columns are empty
+    df = df.dropna(how="all")
+
+    # Convert roll_no to string (removes .0)
+    df["RollNo"] = df["RollNo"].apply(lambda x: str(int(x)) if pd.notna(x) else "")
+    # Reset index
+    df = df.reset_index(drop=True)
+    st.dataframe(df)
 
     # Validate Columns
     if all(col in df.columns for col in required_columns):

@@ -71,3 +71,55 @@ def get_teams(group_name=None):
 data = get_teams(group)
 df = pd.DataFrame(data)
 st.dataframe(df)
+
+
+# -----------------------------
+# 4️⃣ Delete Team
+# -----------------------------
+st.markdown("---")
+st.subheader("🗑️ Delete Team")
+
+
+ADMIN_PASSWORD = "admin@123" 
+
+def delete_team(team_id):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM teams WHERE id = ?", (team_id,))
+    conn.commit()
+    conn.close()
+
+if not df.empty:
+
+    display_options = [
+        f"ID {row['ID']} - Leader: {row['Leader']} ({row['Group']})"
+        for _, row in df.iterrows()
+    ]
+
+    selected_display = st.selectbox("Select Team to Delete", display_options)
+    selected_team_id = int(selected_display.split(" - ")[0].replace("ID ", ""))
+
+    # Show selected team details
+    selected_row = df[df["ID"] == selected_team_id].iloc[0]
+    st.markdown("### 🔍 Selected Team Details")
+    st.write("Group:", selected_row["Group"])
+    st.write("Leader:", selected_row["Leader"])
+    st.write("Members:", selected_row["Members"])
+
+    st.markdown("### 🔐 Enter Admin Password to Enable Delete")
+    password_input = st.text_input("Password", type="password")
+
+    confirm = st.checkbox("⚠️ Confirm deletion")
+
+    if st.button("Delete Team"):
+        if password_input != ADMIN_PASSWORD:
+            st.error("❌ Incorrect password! Delete not allowed.")
+        elif not confirm:
+            st.warning("Please confirm deletion first.")
+        else:
+            delete_team(selected_team_id)
+            st.success(f"✅ Team ID {selected_team_id} deleted successfully!")
+            st.rerun()
+
+else:
+    st.info("No teams available to delete.")

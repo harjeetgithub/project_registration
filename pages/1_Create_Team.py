@@ -34,8 +34,9 @@ else:
     if not available_students:
         st.warning("All students already assigned.")
     else:
+        st.write("No. of Students:", len(available_students))
         leader = st.selectbox("Select Team Leader", available_students)
-
+        
         remaining = [s for s in available_students if s != leader]
 
         members = st.multiselect(
@@ -60,19 +61,4 @@ else:
                     st.rerun()
                 else:
                     st.error("This leader already has a team!")
-        # if st.button("Create Team"):
-        #     if len(members) == 0:
-        #         st.error("Select at least one member")
-        #     else:
-        #         # Extract roll numbers
-        #         leader_roll = leader.split(" - ")[0]
-        #         members_roll = [m.split(" - ")[0] for m in members]
-
-        #         success = save_team(group, leader_roll, members_roll)
-
-        #         if success:
-        #             st.success("Team Created Successfully!")
-        #             st.rerun()
-        #         else:
-        #             st.error("This leader already has a team!")
-     
+        

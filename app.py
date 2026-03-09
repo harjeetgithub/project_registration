@@ -1,13 +1,85 @@
 import streamlit as st
+from supabase import create_client, client
+from dotenv import load_dotenv
+import os
+# from database import create_table, create_student_table
 
-st.set_page_config(page_title="Project Team System", layout="centered")
+# create_table()
+# create_student_table()
 
-st.title("🎓 Project Team Formation System")
+load_dotenv()
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
+supabase: client = create_client(supabase_url, supabase_key)
 
-st.markdown("""
-Welcome to Project Team Management System
+def sign_up(email, password):
+    try:
+        user=supabase.auth.sign_up({"email":email,"password":password})
+        return user
+    except Exception as e:
+        st.error(f"Registration failed: {e}")
 
-Use sidebar to:
-- Create Team
-- View Teams
-""")
+# def sign_in(email, password):
+#     try:
+#         user=supabase.auth.sign_in_with_password({"email":email,"password":password})
+#         return user
+#     except Exception as e:
+#         st.error(f"Login failed: {e}")
+def sign_in(email, password):
+    try:
+        user = supabase.auth.sign_in_with_password({
+            "email": email,
+            "password": password
+        })
+
+        if user and user.user:
+            # store login record
+            supabase.table("login_logs").insert({
+                "email": email
+            }).execute()
+
+        return user
+
+    except Exception as e:
+        st.error(f"Login failed: {e}")
+def sign_out():
+    try:
+        supabase.auth.sign_out()
+        st.session_state.user_email = None
+        st.rerun()
+    except Exception as e:
+        st.error(f"Logout failed: {e}")
+
+
+
+def main_app(user_email):
+    st.title("Welcome to Chitkara University: CSE-AI Department")
+    st.success(f"Welcome, {user_email}...!")
+    if st.button("Logout"):
+        sign_out()
+def auth_screen():
+    st.title("Streamlit & Supabase Based Auth App")
+    option = st.selectbox("choose an action :", ["Login","Sign Up"])
+    email=st.text_input("Email")
+    password = st.text_input("Password", type="password")
+
+    if option == "Sign Up" and st.button("Register"):
+        user=sign_up(email, password)
+        if user and user.user:
+            st.success("Registration successful. Please log in.")
+    
+    if option == "Login" and st.button("Login"):
+        user=sign_in(email, password)
+        if user and user.user:
+            st.session_state.user_email=user.user.email
+            st.success(f"Welcome back, {email}!")
+            st.switch_page("pages/1_Create_Team.py")
+            # st.rerun()
+
+if "user_email" not in st.session_state:
+    st.session_state.user_email= None
+
+if st.session_state.user_email:
+    main_app(st.session_state.user_email)
+else:
+    auth_screen()

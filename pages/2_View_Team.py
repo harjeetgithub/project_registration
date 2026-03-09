@@ -1,74 +1,94 @@
 import streamlit as st
 import pandas as pd
 import json
-from database import create_table,get_connection  # path to your database
+import os
+from dotenv import load_dotenv
+from supabase import create_client, Client
+import io
+from openpyxl import Workbook
+from database import log_page_visit
 
+# -----------------------------
+# 🔹 Supabase Setup
+# -----------------------------
+load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+log_page_visit(st.session_state.user_email, "View Teams")
 st.title("View Teams")
 
 # -----------------------------
 # 1️⃣ Fetch distinct groups dynamically
 # -----------------------------
 def get_groups():
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("SELECT DISTINCT group_name FROM students")
-    groups = [row[0] for row in c.fetchall()]
-    conn.close()
-    return groups
+    response = supabase.table("students").select("group_name").execute()
+    data = response.data
+
+    groups = list(set([row["group_name"] for row in data]))
+    return sorted(groups)
 
 groups = get_groups()
 group = st.selectbox("Filter by Group", ["All"] + groups)
 
 # -----------------------------
-# 2️⃣ Fetch teams
+# 2️⃣ Fetch Teams
 # -----------------------------
 def get_teams(group_name=None):
-    """
-    Fetch teams from database. 
-    If group_name is provided, filter by that group.
-    Returns list of dicts with keys: id, group_name, leader_roll, member_rolls, created_at
-    """
-    create_table()
-    conn = get_connection()
-    c = conn.cursor()
-    
-    
-    
+
     if group_name and group_name != "All":
-        c.execute("SELECT id, group_name, leader_roll, member_rolls, project_title, created_at FROM teams WHERE group_name = ?", (group_name,))
+        response = (
+            supabase.table("teams")
+            .select("*")
+            .eq("group_name", group_name)
+            .order("created_at", desc=True)
+            .execute()
+        )
     else:
-        c.execute("SELECT id, group_name, leader_roll, member_rolls, project_title, created_at FROM teams")
-    
-    rows = c.fetchall()
-    conn.close()
-    
-    # Convert member_rolls from JSON to string
+        response = (
+            supabase.table("teams")
+            .select("*")
+            .order("created_at", desc=True)
+            .execute()
+        )
+
+    rows = response.data
+
     teams = []
     for r in rows:
-        members = json.loads(r[3])  # convert JSON string back to list
+        try:
+            members = json.loads(r["member_rolls"]) if r["member_rolls"] else []
+        except:
+            members = []
+
         members_str = ", ".join(members)
+
         teams.append({
-            "ID": r[0],
-            "Group": r[1],
-            "Leader": r[2],
+            "ID": r["id"],
+            "Group": r["group_name"],
+            "Leader": r["leader_roll"],
             "Members": members_str,
-            "Created At": r[4]
+            "Project Title": r.get("project_title", ""),
+            "Created At": r["created_at"]
         })
+
     return teams
 
 # -----------------------------
-# 3️⃣ Display in Streamlit
+# 3️⃣ Display
 # -----------------------------
 data = get_teams(group)
 df = pd.DataFrame(data)
 st.dataframe(df)
 
-
-
-
-
+# -----------------------------
+# 🔐 Admin Authentication
+# -----------------------------
 ADMIN_PASSWORD = st.secrets["ADMIN_PASSWORD"]
-
 
 st.markdown("---")
 st.subheader("🔐 Admin Authentication")
@@ -84,8 +104,9 @@ if st.button("Login as Admin"):
         st.success("✅ Admin access granted")
     else:
         st.error("❌ Incorrect password")
+
 # -----------------------------
-# 4️⃣ Delete Team
+# 4️⃣ Delete Team (Supabase Version)
 # -----------------------------
 if st.session_state.admin_authenticated:
 
@@ -93,11 +114,7 @@ if st.session_state.admin_authenticated:
     st.subheader("🗑️ Delete Team")
 
     def delete_team(team_id):
-        conn = get_connection()
-        c = conn.cursor()
-        c.execute("DELETE FROM teams WHERE id = ?", (team_id,))
-        conn.commit()
-        conn.close()
+        supabase.table("teams").delete().eq("id", team_id).execute()
 
     if not df.empty:
 
@@ -127,12 +144,9 @@ if st.session_state.admin_authenticated:
 else:
     st.warning("🔒 Admin login required to delete teams.")
 
-
-
-
-import io
-from openpyxl import Workbook
-
+# -----------------------------
+# 5️⃣ Download Excel
+# -----------------------------
 if st.session_state.admin_authenticated:
 
     st.markdown("---")
@@ -164,3 +178,4 @@ if st.session_state.admin_authenticated:
         )
 else:
     st.info("🔒 Admin login required to download data.")
+    

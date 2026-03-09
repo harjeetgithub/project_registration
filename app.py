@@ -58,7 +58,7 @@ def main_app(user_email):
     if st.button("Logout"):
         sign_out()
 def auth_screen():
-    st.title("Streamlit & Supabase Based Auth App")
+    st.title("Login / Sign Up ")
     option = st.selectbox("choose an action :", ["Login","Sign Up"])
     email=st.text_input("Email")
     password = st.text_input("Password", type="password")

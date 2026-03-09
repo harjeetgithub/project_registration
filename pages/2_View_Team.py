@@ -19,7 +19,15 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
+# login protection
+if "user_email" not in st.session_state or st.session_state.user_email is None:
+    st.warning("Please login first")
+    st.switch_page("app.py")
+    st.stop()
+
+# log page visit
 log_page_visit(st.session_state.user_email, "View Teams")
+
 st.title("View Teams")
 
 # -----------------------------

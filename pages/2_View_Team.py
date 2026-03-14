@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 import io
 from openpyxl import Workbook
-from database import log_page_visit, update_project_title_by_roll
+from database import log_page_visit
 
 # -----------------------------
 # 🔹 Supabase Setup

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 import io
 from openpyxl import Workbook
-from database import log_page_visit
+from database import log_page_visit, update_project_title_by_roll
 
 # -----------------------------
 # 🔹 Supabase Setup
@@ -29,6 +29,12 @@ if "user_email" not in st.session_state or st.session_state.user_email is None:
 log_page_visit(st.session_state.user_email, "View Teams")
 
 st.title("View Teams")
+
+
+# -----------------------------
+# Deadline Date
+# -----------------------------
+deadline = pd.to_datetime("2026-03-15")   # change date as required
 
 # -----------------------------
 # 1️⃣ Fetch distinct groups dynamically
@@ -91,8 +97,17 @@ def get_teams(group_name=None):
 # -----------------------------
 data = get_teams(group)
 df = pd.DataFrame(data)
-st.dataframe(df)
-
+df["Created At"] = pd.to_datetime(df["Created At"])
+# highlight function
+# function to style only the column
+def highlight_created_at(val):
+    if val > deadline:
+        return 'color: red'      # late submission
+    else:
+        return 'color: green'    # on-time submission
+# st.dataframe(df)
+styled_df = df.style.applymap(highlight_created_at, subset=["Created At"])
+st.dataframe(styled_df, use_container_width=True)
 # -----------------------------
 # 🔐 Admin Authentication
 # -----------------------------
@@ -187,3 +202,4 @@ if st.session_state.admin_authenticated:
 else:
     st.info("🔒 Admin login required to download data.")
     
+

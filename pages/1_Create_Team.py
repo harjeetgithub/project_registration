@@ -24,6 +24,24 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 log_page_visit(st.session_state.user_email, "Create Team Page")
+
+
+
+st.markdown(
+    """
+    <marquee style="
+        color:red;
+        font-size:20px;
+        font-weight:bold;
+    ">
+    ⚠️ Last Date for Project Registration: 14 March 2026 (11:59 PM). Late submissions will be marked automatically.
+    </marquee>
+    """,
+    unsafe_allow_html=True
+)
+
+
+
 st.title("📝 Create Project Team")
 
 # -----------------------------

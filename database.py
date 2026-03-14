@@ -44,3 +44,4 @@ def log_page_visit(email, page):
         }).execute()
     except Exception as e:
         print("Page visit logging failed:", e)
+
